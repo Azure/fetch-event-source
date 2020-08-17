@@ -52,35 +52,6 @@ export interface FetchEventSourceInit extends RequestInit {
     fetch?: typeof fetch;
 }
 
-class RetriableError extends Error { }
-class FatalError extends Error { }
-
-fetchEventSource('/api/sse', {
-    async onopen(response) {
-        response.ok
-        if (response.status === 429) {
-            throw new RetriableError();
-        }
-    },
-    onmessage(msg) {
-        if (msg.event === 'FatalError') {
-            throw new FatalError(msg.data);
-        }
-    },
-    onclose() {
-        // if the server closes the connection unexpectedly, retry:
-        throw new RetriableError();
-    },
-    onerror(err) {
-        if (err instanceof FatalError) {
-            throw err; // rethrow to stop the operation
-        } else {
-            // do nothing to automatically retry. You can also return
-            // a specific retry interval instead.
-        }
-    }
-});
-
 export function fetchEventSource(input: RequestInfo, {
     signal: inputSignal,
     headers: inputHeaders,
@@ -158,7 +129,6 @@ export function fetchEventSource(input: RequestInfo, {
 
                 await parseResponse(response);
 
-                // if the event stream closes
                 onclose?.();
                 dispose();
                 resolve();
