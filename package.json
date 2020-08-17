@@ -1,0 +1,29 @@
+{
+  "name": "@microsoft/fetch-event-source",
+  "version": "1.0.0",
+  "description": "A better API for making Event Source requests, with all the features of fetch()",
+  "homepage": "https://github.com/Azure/fetch-event-source#readme",
+  "bugs": {
+    "url": "https://github.com/Azure/fetch-event-source/issues"
+  },
+  "author": "Microsoft",
+  "license": "MIT",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "sideEffects": false,
+  "scripts": {
+    "clean": "rimraf ./lib ./coverage",
+    "prebuild": "npm run clean",
+    "build": "tsc",
+    "test": "nyc jasmine --config=jasmine.json",
+    "prepublishOnly": "npm run build && npm run test"
+  },
+  "devDependencies": {
+    "@types/jasmine": "^3.5.12",
+    "jasmine": "^3.6.1",
+    "nyc": "^15.1.0",
+    "rimraf": "^3.0.2",
+    "source-map-support": "^0.5.19",
+    "typescript": "^3.9.7"
+  }
+}

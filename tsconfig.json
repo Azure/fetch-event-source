@@ -1,0 +1,20 @@
+{
+    "compilerOptions": {
+        "target": "ES2017",
+        "module": "commonjs",
+        "forceConsistentCasingInFileNames": true,
+        "rootDir": "src",
+        "outDir": "lib",
+        "declaration": true,
+        "sourceMap": true,
+        "removeComments": true,
+        "noImplicitAny": false,
+        "noFallthroughCasesInSwitch": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "lib": [
+            "DOM",
+            "ES2018"
+        ]
+    }
+}
