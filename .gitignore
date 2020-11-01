@@ -2,3 +2,7 @@
 coverage/
 lib/
 node_modules/
+
+## IntellIJ files
+.idea
+*.iml
