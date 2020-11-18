@@ -1,6 +1,6 @@
 {
   "name": "@microsoft/fetch-event-source",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A better API for making Event Source requests, with all the features of fetch()",
   "homepage": "https://github.com/Azure/fetch-event-source#readme",
   "bugs": {

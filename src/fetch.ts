@@ -155,7 +155,7 @@ export function fetchEventSource(input: RequestInfo, {
 
 function defaultOnOpen(response: Response) {
     const contentType = response.headers.get('content-type');
-    if (contentType !== EventStreamContentType) {
+    if (!contentType?.startsWith(EventStreamContentType)) {
         throw new Error(`Expected content-type to be ${EventStreamContentType}, Actual: ${contentType}`);
     }
 }
