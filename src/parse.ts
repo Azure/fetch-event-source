@@ -48,13 +48,13 @@ export async function* getLines(iter: AsyncIterableIterator<Uint8Array>) {
     let discardTrailingNewline = false;
 
     for await (const arr of iter) {
-        if (buffer) {
-            // we're still parsing the old line. Append the new bytes into buffer:
-            buffer = concat(buffer, arr);
-        } else {
+        if (buffer === undefined) {
             buffer = arr;
             position = 0;
             fieldLength = -1;
+        } else {
+            // we're still parsing the old line. Append the new bytes into buffer:
+            buffer = concat(buffer, arr);
         }
 
         const bufLength = buffer.length;
@@ -103,7 +103,7 @@ export async function* getLines(iter: AsyncIterableIterator<Uint8Array>) {
 
         if (lineStart === bufLength) {
             buffer = undefined; // we've finished reading it
-        } else if (lineStart) {
+        } else if (lineStart !== 0) {
             // Create a new view into buffer beginning at lineStart so we don't
             // need to copy over the previous lines when we get the new arr:
             buffer = buffer.subarray(lineStart);
@@ -117,7 +117,7 @@ export async function* getMessages(iter: AsyncIterableIterator<{ line: Uint8Arra
     let message: EventSourceMessage = {};
     const decoder = new TextDecoder();
     for await (const { line, fieldLength } of iter) {
-        if (!line.length) {
+        if (line.length === 0) {
             // empty line denotes end of message. Yield our current message if it's not empty:
             for (const _ in message) {
                 yield message;

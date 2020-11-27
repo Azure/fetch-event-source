@@ -13,7 +13,7 @@ This library provides an alternate interface for consuming server-sent events, b
 * You have access to the response object if you want to do some custom validation/processing before  parsing the event source. This is useful in case you have API gateways (like nginx) in front of your application server: if the gateway returns an error, you might want to handle it correctly.
 * If the connection gets cut or an error occurs, you have full control over the retry strategy.
 
-In addition, this library also plugs into the browser's [Page Visibility API](https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API) so the connection closes if the document is hidden (e.g., the user minimizes the window), and automatically retries with the last event ID when it becomes visible again. This reduces the load on your server by not having open connections unncessarily (but you can opt out of this behavior if you want.)
+In addition, this library also plugs into the browser's [Page Visibility API](https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API) so the connection closes if the document is hidden (e.g., the user minimizes the window), and automatically retries with the last event ID when it becomes visible again. This reduces the load on your server by not having open connections unnecessarily (but you can opt out of this behavior if you want.)
 
 # Install
 ```sh
@@ -29,6 +29,8 @@ sse.onmessage = (ev) => {
 };
 
 // AFTER:
+import { fetchEventSource } from '@microsoft/fetch-event-source';
+
 await fetchEventSource('/api/sse', {
     onmessage(ev) {
         console.log(ev.data);
@@ -68,6 +70,8 @@ fetchEventSource('/api/sse', {
         }
     },
     onmessage(msg) {
+        // if the server emits an error message, throw an exception
+        // so it gets handled by the onerror callback below:
         if (msg.event === 'FatalError') {
             throw new FatalError(msg.data);
         }
