@@ -3,238 +3,351 @@ import * as parse from './parse';
 describe('parse', () => {
     const encoder = new TextEncoder();
     const decoder = new TextDecoder();
-    
+
     describe('getLines', () => {
-        it('single line', async () => {
+        it('single line', () => {
             // arrange:
-            async function* getBytes() {
-                yield encoder.encode('id: abc\n');
-            }
+            let lineNum = 0;
+            const next = parse.getLines((line, fieldLength) => {
+                ++lineNum;
+                expect(decoder.decode(line)).toEqual('id: abc');
+                expect(fieldLength).toEqual(2);
+            });
 
             // act:
-            for await (const { line, fieldLength } of parse.getLines(getBytes())) {
-                // assert:
-                expect(decoder.decode(line)).toEqual('id: abc');
-                expect(fieldLength).toEqual(2);
-            }
+            next(encoder.encode('id: abc\n'));
+            
+            // assert:
+            expect(lineNum).toBe(1);
         });
 
-        it('multiple lines', async () => {
-            // arrange
-            async function* getBytes() {
-                yield encoder.encode('id: abc\n');
-                yield encoder.encode('data: def\n');
-            }
-
-            // act
+        it('multiple lines', () => {
+            // arrange:
             let lineNum = 0;
-            for await (const { line, fieldLength } of parse.getLines(getBytes())) {
+            const next = parse.getLines((line, fieldLength) => {
                 ++lineNum;
-
-                // assert:
                 expect(decoder.decode(line)).toEqual(lineNum === 1 ? 'id: abc' : 'data: def');
                 expect(fieldLength).toEqual(lineNum === 1 ? 2 : 4);
-            }
+            });
+            
+            // act:
+            next(encoder.encode('id: abc\n'));
+            next(encoder.encode('data: def\n'));
+            
+            // assert:
+            expect(lineNum).toBe(2);
         });
 
-        it('single line split across multiple arrays', async () => {
-            // arrange
-            async function* getBytes() {
-                yield encoder.encode('id: a');
-                yield encoder.encode('bc\n');
-            }
-
-            // act
-            for await (const { line, fieldLength } of parse.getLines(getBytes())) {
-                // assert:
+        it('single line split across multiple arrays', () => {
+            // arrange:
+            let lineNum = 0;
+            const next = parse.getLines((line, fieldLength) => {
+                ++lineNum;
                 expect(decoder.decode(line)).toEqual('id: abc');
                 expect(fieldLength).toEqual(2);
-            }
+            });
+
+            // act:
+            next(encoder.encode('id: a'));
+            next(encoder.encode('bc\n'));
+            
+            // assert:
+            expect(lineNum).toBe(1);
         });
 
-        it('multiple lines split across multiple arrays', async () => {
-            // arrange
-            async function* getBytes() {
-                yield encoder.encode('id: abc\n');
-                yield encoder.encode('da');
-                yield encoder.encode('ta: def\n');
-            }
-
-            // act
+        it('multiple lines split across multiple arrays', () => {
+            // arrange:
             let lineNum = 0;
-            for await (const { line, fieldLength } of parse.getLines(getBytes())) {
+            const next = parse.getLines((line, fieldLength) => {
                 ++lineNum;
-
-                // assert:
                 expect(decoder.decode(line)).toEqual(lineNum === 1 ? 'id: abc' : 'data: def');
                 expect(fieldLength).toEqual(lineNum === 1 ? 2 : 4);
-            }
+            });
+            
+            // act:
+            next(encoder.encode('id: ab'));
+            next(encoder.encode('c\nda'));
+            next(encoder.encode('ta: def\n'));
+            
+            // assert:
+            expect(lineNum).toBe(2);
         });
 
-        it('new line', async () => {
-            // arrange
-            async function* getBytes() {
-                yield encoder.encode('\n');
-            }
-
-            // act
-            for await (const { line, fieldLength } of parse.getLines(getBytes())) {
-                // assert:
+        it('new line', () => {
+            // arrange:
+            let lineNum = 0;
+            const next = parse.getLines((line, fieldLength) => {
+                ++lineNum;
                 expect(decoder.decode(line)).toEqual('');
                 expect(fieldLength).toEqual(-1);
-            }
+            });
+
+            // act:
+            next(encoder.encode('\n'));
+            
+            // assert:
+            expect(lineNum).toBe(1);
         });
 
-        it('comment line', async () => {
-            // arrange
-            async function* getBytes() {
-                yield encoder.encode(': this is a comment\n');
-            }
-
-            // act
-            for await (const { line, fieldLength } of parse.getLines(getBytes())) {
-                // assert:
+        it('comment line', () => {
+            // arrange:
+            let lineNum = 0;
+            const next = parse.getLines((line, fieldLength) => {
+                ++lineNum;
                 expect(decoder.decode(line)).toEqual(': this is a comment');
                 expect(fieldLength).toEqual(0);
-            }
+            });
+
+            // act:
+            next(encoder.encode(': this is a comment\n'));
+            
+            // assert:
+            expect(lineNum).toBe(1);
         });
 
-        it('line with no field', async () => {
-            // arrange
-            async function* getBytes() {
-                yield encoder.encode('this is an invalid line\n');
-            }
-
-            // act
-            for await (const { line, fieldLength } of parse.getLines(getBytes())) {
-                // assert:
+        it('line with no field', () => {
+            // arrange:
+            let lineNum = 0;
+            const next = parse.getLines((line, fieldLength) => {
+                ++lineNum;
                 expect(decoder.decode(line)).toEqual('this is an invalid line');
                 expect(fieldLength).toEqual(-1);
-            }
+            });
+
+            // act:
+            next(encoder.encode('this is an invalid line\n'));
+            
+            // assert:
+            expect(lineNum).toBe(1);
         });
 
-        it('single byte array with multiple lines separated by \\n', async () => {
-            // arrange
-            async function* getBytes() {
-                yield encoder.encode('id: abc\ndata: def\n');
-            }
-
-            // act
+        it('line with multiple colons', () => {
+            // arrange:
             let lineNum = 0;
-            for await (const { line, fieldLength } of parse.getLines(getBytes())) {
+            const next = parse.getLines((line, fieldLength) => {
                 ++lineNum;
+                expect(decoder.decode(line)).toEqual('id: abc: def');
+                expect(fieldLength).toEqual(2);
+            });
 
-                // assert:
-                expect(decoder.decode(line)).toEqual(lineNum === 1 ? 'id: abc' : 'data: def');
-                expect(fieldLength).toEqual(lineNum === 1 ? 2 : 4);
-            }
+            // act:
+            next(encoder.encode('id: abc: def\n'));
+            
+            // assert:
+            expect(lineNum).toBe(1);
         });
 
-        it('single byte array with multiple lines separated by \\r', async () => {
-            // arrange
-            async function* getBytes() {
-                yield encoder.encode('id: abc\rdata: def\r');
-            }
-
-            // act
+        it('single byte array with multiple lines separated by \\n', () => {
+            // arrange:
             let lineNum = 0;
-            for await (const { line, fieldLength } of parse.getLines(getBytes())) {
+            const next = parse.getLines((line, fieldLength) => {
                 ++lineNum;
-
-                // assert:
                 expect(decoder.decode(line)).toEqual(lineNum === 1 ? 'id: abc' : 'data: def');
                 expect(fieldLength).toEqual(lineNum === 1 ? 2 : 4);
-            }
+            });
+
+            // act:
+            next(encoder.encode('id: abc\ndata: def\n'));
+            
+            // assert:
+            expect(lineNum).toBe(2);
         });
 
-        it('single byte array with multiple lines separated by \\r\\n', async () => {
-            // arrange
-            async function* getBytes() {
-                yield encoder.encode('id: abc\r\ndata: def\r\n');
-            }
-
-            // act
+        it('single byte array with multiple lines separated by \\r', () => {
+            // arrange:
             let lineNum = 0;
-            for await (const { line, fieldLength } of parse.getLines(getBytes())) {
+            const next = parse.getLines((line, fieldLength) => {
                 ++lineNum;
-
-                // assert:
                 expect(decoder.decode(line)).toEqual(lineNum === 1 ? 'id: abc' : 'data: def');
                 expect(fieldLength).toEqual(lineNum === 1 ? 2 : 4);
-            }
+            });
+
+            // act:
+            next(encoder.encode('id: abc\rdata: def\r'));
+            
+            // assert:
+            expect(lineNum).toBe(2);
+        });
+
+        it('single byte array with multiple lines separated by \\r\\n', () => {
+            // arrange:
+            let lineNum = 0;
+            const next = parse.getLines((line, fieldLength) => {
+                ++lineNum;
+                expect(decoder.decode(line)).toEqual(lineNum === 1 ? 'id: abc' : 'data: def');
+                expect(fieldLength).toEqual(lineNum === 1 ? 2 : 4);
+            });
+
+            // act:
+            next(encoder.encode('id: abc\r\ndata: def\r\n'));
+            
+            // assert:
+            expect(lineNum).toBe(2);
         });
     });
 
     describe('getMessages', () => {
-        it('happy path', async () => {
+        it('happy path', () => {
             // arrange:
-            async function* getLines() {
-                yield { line: encoder.encode('retry: 42'), fieldLength: 5 };
-                yield { line: encoder.encode('id: abc'), fieldLength: 2 };
-                yield { line: encoder.encode('event:def'), fieldLength: 5 };
-                yield { line: encoder.encode('data:ghi'), fieldLength: 4 };
-                yield { line: encoder.encode(''), fieldLength: -1 };
-            }
-
-            // act:
-            for await (const msg of parse.getMessages(getLines())) {
-                // assert:
+            let msgNum = 0;
+            const next = parse.getMessages(id => {
+                expect(id).toEqual('abc');
+            }, retry => {
+                expect(retry).toEqual(42);
+            }, msg => {
+                ++msgNum;
                 expect(msg).toEqual({
                     retry: 42,
                     id: 'abc',
                     event: 'def',
                     data: 'ghi'
                 });
-            }
-        });
-
-        it('skip unknown fields', async () => {
-            // arrange:
-            async function* getLines() {
-                yield { line: encoder.encode('id: abc'), fieldLength: 2 };
-                yield { line: encoder.encode('foo: null'), fieldLength: 3 };
-                yield { line: encoder.encode(''), fieldLength: -1 };
-            }
+            });
 
             // act:
-            for await (const msg of parse.getMessages(getLines())) {
-                // assert:
-                expect(msg).toEqual({ id: 'abc' });
-            }
+            next(encoder.encode('retry: 42'), 5);
+            next(encoder.encode('id: abc'), 2);
+            next(encoder.encode('event:def'), 5);
+            next(encoder.encode('data:ghi'), 4);
+            next(encoder.encode(''), -1);
+
+            // assert:
+            expect(msgNum).toBe(1);
+        });
+
+        it('skip unknown fields', () => {
+            let msgNum = 0;
+            const next = parse.getMessages(id => {
+                expect(id).toEqual('abc');
+            }, _retry => {
+                fail('retry should not be called');
+            }, msg => {
+                ++msgNum;
+                expect(msg).toEqual({
+                    id: 'abc',
+                    data: '',
+                    event: '',
+                    retry: undefined,
+                });
+            });
+
+            // act:
+            next(encoder.encode('id: abc'), 2);
+            next(encoder.encode('foo: null'), 3);
+            next(encoder.encode(''), -1);
+
+            // assert:
+            expect(msgNum).toBe(1);
         });
         
-        it('ignore non-integer retry', async () => {
-            // arrange:
-            async function* getLines() {
-                yield { line: encoder.encode('id: abc'), fieldLength: 2 };
-                yield { line: encoder.encode('retry: def'), fieldLength: 5 };
-                yield { line: encoder.encode(''), fieldLength: -1 };
-            }
+        it('ignore non-integer retry', () => {
+            let msgNum = 0;
+            const next = parse.getMessages(_id => {
+                fail('id should not be called');
+            }, _retry => {
+                fail('retry should not be called');
+            }, msg => {
+                ++msgNum;
+                expect(msg).toEqual({
+                    id: '',
+                    data: '',
+                    event: '',
+                    retry: undefined,
+                });
+            });
 
             // act:
-            for await (const msg of parse.getMessages(getLines())) {
-                // assert:
-                expect(msg).toEqual({ id: 'abc' });
-            }
+            next(encoder.encode('retry: def'), 5);
+            next(encoder.encode(''), -1);
+
+            // assert:
+            expect(msgNum).toBe(1);
         });
 
-        it('skip comment-only messages', async () => {
+        it('skip comment-only messages', () => {
             // arrange:
-            async function* getBytes() {
-                yield encoder.encode('id:123\n\n');
-                yield encoder.encode(':\n');
-                yield encoder.encode(':\r\n');
-                yield encoder.encode('event: foo \n\n');
-            }
+            let msgNum = 0;
+            const next = parse.getMessages(id => {
+                expect(id).toEqual('123');
+            }, _retry => {
+                fail('retry should not be called');
+            }, msg => {
+                ++msgNum;
+                expect(msg).toEqual({
+                    retry: undefined,
+                    id: '123',
+                    event: 'foo ',
+                    data: '',
+                });
+            });
 
             // act:
-            let msgNum = 0;
-            for await (const msg of parse.getMessages(parse.getLines(getBytes()))) {
-                ++msgNum;
+            next(encoder.encode('id:123'), 2);
+            next(encoder.encode(':'), 0);
+            next(encoder.encode(':    '), 0);
+            next(encoder.encode('event: foo '), 5);
+            next(encoder.encode(''), -1);
 
-                // assert:
-                expect(msg).toEqual(msgNum === 1 ? { id: '123' } : { event: 'foo ' });
-            }
+            // assert:
+            expect(msgNum).toBe(1);
+        });
+
+        it('should append data split across multiple lines', () => {
+            // arrange:
+            let msgNum = 0;
+            const next = parse.getMessages(_id => {
+                fail('id should not be called');
+            }, _retry => {
+                fail('retry should not be called');
+            }, msg => {
+                ++msgNum;
+                expect(msg).toEqual({
+                    data: 'YHOO\n+2\n\n10',
+                    id: '',
+                    event: '',
+                    retry: undefined,
+                });
+            });
+
+            // act:
+            next(encoder.encode('data:YHOO'), 4);
+            next(encoder.encode('data: +2'), 4);
+            next(encoder.encode('data'), 4);
+            next(encoder.encode('data: 10'), 4);
+            next(encoder.encode(''), -1);
+
+            // assert:
+            expect(msgNum).toBe(1);
+        });
+
+        it('should reset id if sent multiple times', () => {
+            // arrange:
+            const expectedIds = ['foo', ''];
+            let idsIdx = 0;
+            let msgNum = 0;
+            const next = parse.getMessages(id => {
+                expect(id).toEqual(expectedIds[idsIdx]);
+                ++idsIdx;
+            }, _retry => {
+                fail('retry should not be called');
+            }, msg => {
+                ++msgNum;
+                expect(msg).toEqual({
+                    data: '',
+                    id: '',
+                    event: '',
+                    retry: undefined,
+                });
+            });
+
+            // act:
+            next(encoder.encode('id: foo'), 2);
+            next(encoder.encode('id'), 2);
+            next(encoder.encode(''), -1);
+
+            // assert:
+            expect(idsIdx).toBe(2);
+            expect(msgNum).toBe(1);
         });
     });
 });

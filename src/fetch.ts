@@ -1,8 +1,9 @@
-import { parseStream, EventSourceMessage } from './parse';
+import { EventSourceMessage, getBytes, getLines, getMessages } from './parse';
 
 export const EventStreamContentType = 'text/event-stream';
 
 const DefaultRetryInterval = 1000;
+const LastEventId = 'last-event-id';
 
 export interface FetchEventSourceInit extends RequestInit {
     /**
@@ -96,24 +97,6 @@ export function fetchEventSource(input: RequestInfo, {
             resolve(); // don't waste time constructing/logging errors
         });
 
-        async function parseResponse(response: Response) {
-            for await (const msg of parseStream(response.body)) {
-                // first check for system events:
-                if (msg.id !== undefined) {
-                    // keep track of the last-seen ID and send it back on the next retry:
-                    headers['last-event-id'] = msg.id;
-                }
-
-                if (msg.retry !== undefined) {
-                    retryInterval = msg.retry;
-                }
-
-                if (msg.data !== undefined && onmessage != null) {
-                    onmessage(msg);
-                }
-            }
-        }
-
         const fetch = inputFetch ?? window.fetch;
         const onopen = inputOnOpen ?? defaultOnOpen;
         async function create() {
@@ -126,8 +109,18 @@ export function fetchEventSource(input: RequestInfo, {
                 });
 
                 await onopen(response);
-
-                await parseResponse(response);
+                
+                await getBytes(response.body, getLines(getMessages(id => {
+                    if (id) {
+                        // store the id and send it back on the next retry:
+                        headers[LastEventId] = id;
+                    } else {
+                        // don't send the last-event-id header anymore:
+                        delete headers[LastEventId];
+                    }
+                }, retry => {
+                    retryInterval = retry;
+                }, onmessage)));
 
                 onclose?.();
                 dispose();
