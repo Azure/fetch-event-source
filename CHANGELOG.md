@@ -15,7 +15,7 @@ This release improves the performance of parsing the response stream and fixes s
     ````
     will result in `{ data: 'Foo\nBar\n\nBaz' }`
 
-- If the `id` field is empty, the `last-event-id` header will no longer be sent on the next reconnect.
+- If the server sends an `id` field with an empty value, the last-event-id header will no longer be sent on the next reconnect.
 
 ### Removed
 - The internal `parseStream` function has been removed. The parse implementation was previously based on async generators, which required a lot of supporting code in both the typescript-generated polyfill as well as the javascript engine. The new implementation is based on simple callbacks, which should be much faster.
