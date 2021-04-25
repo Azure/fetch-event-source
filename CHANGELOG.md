@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2.0.1
+This release adds support for esmodule imports (see #4).
+
 ## 2.0.0
 This release improves the performance of parsing the response stream and fixes some corner cases to better match [the spec](https://html.spec.whatwg.org/multipage/server-sent-events.html#event-stream-interpretation).
 
