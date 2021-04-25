@@ -110,7 +110,7 @@ export function fetchEventSource(input: RequestInfo, {
 
                 await onopen(response);
                 
-                await getBytes(response.body, getLines(getMessages(id => {
+                await getBytes(response.body!, getLines(getMessages(id => {
                     if (id) {
                         // store the id and send it back on the next retry:
                         headers[LastEventId] = id;
