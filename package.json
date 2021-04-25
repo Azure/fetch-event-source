@@ -8,13 +8,14 @@
   },
   "author": "Microsoft",
   "license": "MIT",
-  "main": "lib/index.js",
-  "types": "lib/index.d.ts",
+  "main": "lib/csj/index.js",
+  "module": "lib/esm/index.js",
+  "types": "lib/csj/index.d.ts",
   "sideEffects": false,
   "scripts": {
     "clean": "rimraf ./lib ./coverage",
     "prebuild": "npm run clean",
-    "build": "tsc",
+    "build": "tsc && tsc -p tsconfig.esm.json",
     "test": "nyc jasmine --config=jasmine.json",
     "prepublishOnly": "npm run build && npm run test"
   },

@@ -4,7 +4,7 @@
         "module": "commonjs",
         "forceConsistentCasingInFileNames": true,
         "rootDir": "src",
-        "outDir": "lib",
+        "outDir": "lib/cjs",
         "declaration": true,
         "sourceMap": true,
         "removeComments": true,
