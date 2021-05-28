@@ -100,6 +100,9 @@ export function fetchEventSource(input: RequestInfo, {
         const fetch = inputFetch ?? window.fetch;
         const onopen = inputOnOpen ?? defaultOnOpen;
         async function create() {
+            if (curRequestController) {
+                curRequestController.abort();
+            }
             curRequestController = new AbortController();
             try {
                 const response = await fetch(input, {
