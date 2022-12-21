@@ -1,4 +1,5 @@
 import { EventSourceMessage, getBytes, getLines, getMessages } from './parse';
+import {FatalError} from "./error";
 
 export const EventStreamContentType = 'text/event-stream';
 
@@ -167,6 +168,9 @@ export function fetchEventSource(input: RequestInfo, {
 function defaultOnOpen(response: Response) {
     const contentType = response.headers.get('content-type');
     if (!contentType?.startsWith(EventStreamContentType)) {
-        throw new Error(`Expected content-type to be ${EventStreamContentType}, Actual: ${contentType}`);
+        throw new FatalError(`Expected content-type to be ${EventStreamContentType}, Actual: ${contentType}`);
+    }
+    if (response.status == 204) {
+        throw new FatalError(`Received response code HTTP 204 (No Content)`)
     }
 }
