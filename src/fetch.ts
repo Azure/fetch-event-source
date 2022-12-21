@@ -74,20 +74,20 @@ export function fetchEventSource(input: RequestInfo, {
         let curRequestController: AbortController;
         function onVisibilityChange() {
             curRequestController.abort(); // close existing request on every visibility change
-            if (!self.document?.hidden) {
+            if (!globalThis.document?.hidden) {
                 create(); // page is now visible again, recreate request.
             }
         }
 
-        if (self.document && !openWhenHidden) {
-            self.document?.addEventListener('visibilitychange', onVisibilityChange);
+        if (globalThis.document && !openWhenHidden) {
+            globalThis.document?.addEventListener('visibilitychange', onVisibilityChange);
         }
 
         let retryInterval = DefaultRetryInterval;
         let retryTimer = 0;
         function dispose() {
-            self.document?.removeEventListener('visibilitychange', onVisibilityChange);
-            self.clearTimeout(retryTimer);
+            globalThis.document?.removeEventListener('visibilitychange', onVisibilityChange);
+            globalThis.clearTimeout(retryTimer);
             curRequestController.abort();
         }
 
@@ -97,7 +97,7 @@ export function fetchEventSource(input: RequestInfo, {
             resolve(); // don't waste time constructing/logging errors
         });
 
-        const fetch = inputFetch ?? self.fetch;
+        const fetch = inputFetch ?? globalThis.fetch;
         const onopen = inputOnOpen ?? defaultOnOpen;
         async function create() {
             if (curRequestController) {
@@ -134,8 +134,8 @@ export function fetchEventSource(input: RequestInfo, {
                     try {
                         // check if we need to retry:
                         const interval: any = onerror?.(err) ?? retryInterval;
-                        self.clearTimeout(retryTimer);
-                        retryTimer = self.setTimeout(create, interval);
+                        globalThis.clearTimeout(retryTimer);
+                        retryTimer = globalThis.setTimeout(create, interval);
                     } catch (innerErr) {
                         // we should not retry anymore:
                         dispose();
