@@ -1,6 +1,6 @@
 {
   "name": "@microsoft/fetch-event-source",
-  "version": "2.0.1",
+  "version": "3.0.0",
   "description": "A better API for making Event Source requests, with all the features of fetch()",
   "homepage": "https://github.com/Azure/fetch-event-source#readme",
   "repository": "github:Azure/fetch-event-source",
@@ -13,10 +13,19 @@
   "module": "lib/esm/index.js",
   "types": "lib/cjs/index.d.ts",
   "sideEffects": false,
+  "type": "module",
+  "files": [
+    "CHANGELOG.md",
+    "lib",
+    "tsconfig.esm.json"
+  ],
+  "engines": {
+    "node": ">=14.16"
+  },
   "scripts": {
     "clean": "rimraf ./lib ./coverage",
     "prebuild": "npm run clean",
-    "build": "tsc && tsc -p tsconfig.esm.json",
+    "build": "tsc-multi && tsc -p tsconfig.esm.json",
     "test": "nyc jasmine --config=jasmine.json",
     "prepublishOnly": "npm run build && npm run test"
   },
@@ -26,6 +35,7 @@
     "nyc": "^15.1.0",
     "rimraf": "^3.0.2",
     "source-map-support": "^0.5.19",
-    "typescript": "^4.2.4"
+    "typescript": "^4.2.4",
+    "tsc-multi": "^0.6.1"
   }
 }

@@ -1,4 +1,4 @@
-import { EventSourceMessage, getBytes, getLines, getMessages } from './parse';
+import { EventSourceMessage, getBytes, getLines, getMessages } from './parse.js';
 
 export const EventStreamContentType = 'text/event-stream';
 
