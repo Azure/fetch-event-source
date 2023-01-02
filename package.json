@@ -40,7 +40,7 @@
     "tsconfig.esm.json"
   ],
   "engines": {
-    "node": ">=14.16"
+    "node": ">=16.15"
   },
   "scripts": {
     "clean": "rimraf ./lib ./coverage",
