@@ -1,4 +1,4 @@
-import { EventSourceMessage, getBytes, getLines, getMessages } from './parse';
+import { EventSourceMessage, getBytes, getLines, getMessages } from './parse.js';
 
 export const EventStreamContentType = 'text/event-stream';
 
@@ -49,7 +49,7 @@ export interface FetchEventSourceInit extends RequestInit {
      */
     openWhenHidden?: boolean;
 
-    /** The Fetch function to use. Defaults to window.fetch */
+    /** The Fetch function to use. Defaults to fetch */
     fetch?: typeof fetch;
 }
 
@@ -79,15 +79,17 @@ export function fetchEventSource(input: RequestInfo, {
             }
         }
 
-        if (!openWhenHidden) {
+        if (typeof document !== 'undefined' && !openWhenHidden) {
             document.addEventListener('visibilitychange', onVisibilityChange);
         }
 
         let retryInterval = DefaultRetryInterval;
         let retryTimer = 0;
         function dispose() {
-            document.removeEventListener('visibilitychange', onVisibilityChange);
-            window.clearTimeout(retryTimer);
+            if (typeof document !== 'undefined' && !openWhenHidden) {
+                document.removeEventListener('visibilitychange', onVisibilityChange);
+            }
+            clearTimeout(retryTimer);
             curRequestController.abort();
         }
 
@@ -97,12 +99,12 @@ export function fetchEventSource(input: RequestInfo, {
             resolve(); // don't waste time constructing/logging errors
         });
 
-        const fetch = inputFetch ?? window.fetch;
+        const fetchFn = inputFetch ?? fetch;
         const onopen = inputOnOpen ?? defaultOnOpen;
         async function create() {
             curRequestController = new AbortController();
             try {
-                const response = await fetch(input, {
+                const response = await fetchFn(input, {
                     ...rest,
                     headers,
                     signal: curRequestController.signal,
@@ -110,7 +112,8 @@ export function fetchEventSource(input: RequestInfo, {
 
                 await onopen(response);
                 
-                await getBytes(response.body!, getLines(getMessages(id => {
+                await getBytes(response.body!, getLines(getMessages(onmessage,
+                   id => {
                     if (id) {
                         // store the id and send it back on the next retry:
                         headers[LastEventId] = id;
@@ -120,7 +123,7 @@ export function fetchEventSource(input: RequestInfo, {
                     }
                 }, retry => {
                     retryInterval = retry;
-                }, onmessage)));
+                })));
 
                 onclose?.();
                 dispose();
@@ -131,8 +134,8 @@ export function fetchEventSource(input: RequestInfo, {
                     try {
                         // check if we need to retry:
                         const interval: any = onerror?.(err) ?? retryInterval;
-                        window.clearTimeout(retryTimer);
-                        retryTimer = window.setTimeout(create, interval);
+                        clearTimeout(retryTimer);
+                        retryTimer = setTimeout(create, interval);
                     } catch (innerErr) {
                         // we should not retry anymore:
                         dispose();

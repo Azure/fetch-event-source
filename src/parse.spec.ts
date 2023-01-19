@@ -1,4 +1,4 @@
-import * as parse from './parse';
+import * as parse from './parse.js';
 
 describe('parse', () => {
     const encoder = new TextEncoder();
@@ -190,11 +190,7 @@ describe('parse', () => {
         it('happy path', () => {
             // arrange:
             let msgNum = 0;
-            const next = parse.getMessages(id => {
-                expect(id).toEqual('abc');
-            }, retry => {
-                expect(retry).toEqual(42);
-            }, msg => {
+            const next = parse.getMessages(msg => {
                 ++msgNum;
                 expect(msg).toEqual({
                     retry: 42,
@@ -202,6 +198,10 @@ describe('parse', () => {
                     event: 'def',
                     data: 'ghi'
                 });
+            }, id => {
+                expect(id).toEqual('abc');
+            }, retry => {
+                expect(retry).toEqual(42);
             });
 
             // act:
@@ -217,11 +217,7 @@ describe('parse', () => {
 
         it('skip unknown fields', () => {
             let msgNum = 0;
-            const next = parse.getMessages(id => {
-                expect(id).toEqual('abc');
-            }, _retry => {
-                fail('retry should not be called');
-            }, msg => {
+            const next = parse.getMessages(msg => {
                 ++msgNum;
                 expect(msg).toEqual({
                     id: 'abc',
@@ -229,6 +225,10 @@ describe('parse', () => {
                     event: '',
                     retry: undefined,
                 });
+            }, id => {
+                expect(id).toEqual('abc');
+            }, _retry => {
+                fail('retry should not be called');
             });
 
             // act:
@@ -242,11 +242,7 @@ describe('parse', () => {
         
         it('ignore non-integer retry', () => {
             let msgNum = 0;
-            const next = parse.getMessages(_id => {
-                fail('id should not be called');
-            }, _retry => {
-                fail('retry should not be called');
-            }, msg => {
+            const next = parse.getMessages(msg => {
                 ++msgNum;
                 expect(msg).toEqual({
                     id: '',
@@ -254,6 +250,10 @@ describe('parse', () => {
                     event: '',
                     retry: undefined,
                 });
+            }, _id => {
+                fail('id should not be called');
+            }, _retry => {
+                fail('retry should not be called');
             });
 
             // act:
@@ -267,11 +267,7 @@ describe('parse', () => {
         it('skip comment-only messages', () => {
             // arrange:
             let msgNum = 0;
-            const next = parse.getMessages(id => {
-                expect(id).toEqual('123');
-            }, _retry => {
-                fail('retry should not be called');
-            }, msg => {
+            const next = parse.getMessages(msg => {
                 ++msgNum;
                 expect(msg).toEqual({
                     retry: undefined,
@@ -279,6 +275,10 @@ describe('parse', () => {
                     event: 'foo ',
                     data: '',
                 });
+            }, id => {
+                expect(id).toEqual('123');
+            }, _retry => {
+                fail('retry should not be called');
             });
 
             // act:
@@ -295,11 +295,7 @@ describe('parse', () => {
         it('should append data split across multiple lines', () => {
             // arrange:
             let msgNum = 0;
-            const next = parse.getMessages(_id => {
-                fail('id should not be called');
-            }, _retry => {
-                fail('retry should not be called');
-            }, msg => {
+            const next = parse.getMessages(msg => {
                 ++msgNum;
                 expect(msg).toEqual({
                     data: 'YHOO\n+2\n\n10',
@@ -307,6 +303,10 @@ describe('parse', () => {
                     event: '',
                     retry: undefined,
                 });
+            }, _id => {
+                fail('id should not be called');
+            }, _retry => {
+                fail('retry should not be called');
             });
 
             // act:
@@ -325,12 +325,7 @@ describe('parse', () => {
             const expectedIds = ['foo', ''];
             let idsIdx = 0;
             let msgNum = 0;
-            const next = parse.getMessages(id => {
-                expect(id).toEqual(expectedIds[idsIdx]);
-                ++idsIdx;
-            }, _retry => {
-                fail('retry should not be called');
-            }, msg => {
+            const next = parse.getMessages(msg => {
                 ++msgNum;
                 expect(msg).toEqual({
                     data: '',
@@ -338,6 +333,11 @@ describe('parse', () => {
                     event: '',
                     retry: undefined,
                 });
+            }, id => {
+                expect(id).toEqual(expectedIds[idsIdx]);
+                ++idsIdx;
+            }, _retry => {
+                fail('retry should not be called');
             });
 
             // act:
