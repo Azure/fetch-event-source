@@ -17,13 +17,10 @@
     "clean": "rimraf ./lib ./coverage",
     "prebuild": "npm run clean",
     "build": "tsc && tsc -p tsconfig.esm.json",
-    "test": "nyc jasmine --config=jasmine.json",
     "prepublishOnly": "npm run build && npm run test"
   },
   "devDependencies": {
-    "@types/jasmine": "^3.6.9",
-    "jasmine": "^3.7.0",
-    "nyc": "^15.1.0",
+    "@types/jasmine": "^4.3.1",
     "rimraf": "^3.0.2",
     "source-map-support": "^0.5.19",
     "typescript": "^4.2.4"
