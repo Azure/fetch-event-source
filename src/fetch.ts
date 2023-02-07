@@ -86,8 +86,10 @@ export function fetchEventSource(input: RequestInfo, {
         let retryInterval = DefaultRetryInterval;
         let retryTimer = 0;
         function dispose() {
-            document.removeEventListener('visibilitychange', onVisibilityChange);
-            window.clearTimeout(retryTimer);
+            if (!openWhenHidden) {
+                document.removeEventListener('visibilitychange', onVisibilityChange);
+            }
+            self.clearTimeout(retryTimer);
             curRequestController.abort();
         }
 
@@ -131,8 +133,8 @@ export function fetchEventSource(input: RequestInfo, {
                     try {
                         // check if we need to retry:
                         const interval: any = onerror?.(err) ?? retryInterval;
-                        window.clearTimeout(retryTimer);
-                        retryTimer = window.setTimeout(create, interval);
+                        self.clearTimeout(retryTimer);
+                        retryTimer = self.setTimeout(create, interval);
                     } catch (innerErr) {
                         // we should not retry anymore:
                         dispose();
