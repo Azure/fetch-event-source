@@ -60,7 +60,7 @@ class FatalError extends Error { }
 
 fetchEventSource('/api/sse', {
     async onopen(response) {
-        if (response.ok && response.headers.get('content-type') === EventStreamContentType) {
+        if (response.ok && response.headers.get('content-type').startsWith('text/event-stream')) {
             return; // everything's good
         } else if (response.status >= 400 && response.status < 500 && response.status !== 429) {
             // client-side errors are usually non-retriable:
