@@ -28,6 +28,8 @@ export interface FetchEventSourceInit extends RequestInit {
     /**
      * Called when a response finishes. If you don't expect the server to kill
      * the connection, you can throw an exception here and retry using onerror.
+     *
+     * For GET requests, default is retry.
      */
     onclose?: () => void;
 
@@ -44,8 +46,8 @@ export interface FetchEventSourceInit extends RequestInit {
 
     /**
      * If true, will keep the request open even if the document is hidden.
-     * By default, fetchEventSource will close the request and reopen it
-     * automatically when the document becomes visible again.
+     * By default for GET requests, fetchEventSource will close the request and
+     * reopen it automatically when the document becomes visible again.
      */
     openWhenHidden?: boolean;
 
@@ -54,6 +56,7 @@ export interface FetchEventSourceInit extends RequestInit {
 }
 
 export function fetchEventSource(input: RequestInfo, {
+    method: str,
     signal: inputSignal,
     headers: inputHeaders,
     onopen: inputOnOpen,
@@ -65,6 +68,16 @@ export function fetchEventSource(input: RequestInfo, {
     ...rest
 }: FetchEventSourceInit) {
     return new Promise<void>((resolve, reject) => {
+        if (method != null && method !== 'GET') {
+            // non GET requests modify server state, don't reset them
+            // automatically
+            if (onerror == null) {
+                onerror = (e) => { throw e; }
+            }
+            if (openWhenHidden == null) {
+                openWhenHidden = true;
+            }
+        }
         // make a copy of the input headers since we may modify it below:
         const headers = { ...inputHeaders };
         if (!headers.accept) {
