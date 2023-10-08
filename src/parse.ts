@@ -19,11 +19,16 @@ export interface EventSourceMessage {
  * @param onChunk A function that will be called on each new byte chunk in the stream.
  * @returns {Promise<void>} A promise that will be resolved when the stream closes.
  */
-export async function getBytes(stream: ReadableStream<Uint8Array>, onChunk: (arr: Uint8Array) => void) {
-    const reader = stream.getReader();
-    let result: ReadableStreamDefaultReadResult<Uint8Array>;
-    while (!(result = await reader.read()).done) {
-        onChunk(result.value);
+export async function getBytes(response: Response, onChunk: (arr: Uint8Array) => void) {
+    const reader = response.body?.getReader();
+    if (reader) {
+        let result = await reader.read();
+        while (!result.done) {
+            onChunk(result.value);
+            result = await reader.read();
+        }
+    } else {
+        onChunk(new Uint8Array(await response.arrayBuffer()));
     }
 }
 
@@ -64,10 +69,10 @@ export function getLines(onLine: (line: Uint8Array, fieldLength: number) => void
                 if (buffer[position] === ControlChars.NewLine) {
                     lineStart = ++position; // skip to next char
                 }
-                
+
                 discardTrailingNewline = false;
             }
-            
+
             // start looking forward till the end of line:
             let lineEnd = -1; // index of the \r or \n char
             for (; position < bufLength && lineEnd === -1; ++position) {
