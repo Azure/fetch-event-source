@@ -49,6 +49,11 @@ export interface FetchEventSourceInit extends RequestInit {
      */
     openWhenHidden?: boolean;
 
+    /**
+     * The interval (in milliseconds) to wait before retrying the connection.
+     */
+    retryInterval?: number;
+
     /** The Fetch function to use. Defaults to window.fetch */
     fetch?: typeof fetch;
 }
@@ -61,6 +66,7 @@ export function fetchEventSource(input: RequestInfo, {
     onclose,
     onerror,
     openWhenHidden,
+    retryInterval: inputRetryInterval,
     fetch: inputFetch,
     ...rest
 }: FetchEventSourceInit) {
@@ -83,7 +89,7 @@ export function fetchEventSource(input: RequestInfo, {
             document.addEventListener('visibilitychange', onVisibilityChange);
         }
 
-        let retryInterval = DefaultRetryInterval;
+        let retryInterval = inputRetryInterval || DefaultRetryInterval;
         let retryTimer = 0;
         function dispose() {
             document.removeEventListener('visibilitychange', onVisibilityChange);
