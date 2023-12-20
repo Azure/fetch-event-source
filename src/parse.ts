@@ -142,8 +142,8 @@ export function getMessages(
                     // if this message already has data, append the new value to the old.
                     // otherwise, just set to the new value:
                     message.data = message.data
-                        ? message.data + '\n' + value
-                        : value; // otherwise, 
+                        ? message.data + (value || '\n')
+                        : value || '\n'; // otherwise,
                     break;
                 case 'event':
                     message.event = value;
