@@ -5,11 +5,15 @@ export const EventStreamContentType = 'text/event-stream';
 const DefaultRetryInterval = 1000;
 const LastEventId = 'last-event-id';
 
-export interface FetchEventSourceInit extends RequestInit {
+export interface FetchEventSourceInit extends Omit<RequestInit, 'headers'> {
     /**
-     * The request headers. FetchEventSource only supports the Record<string,string> format.
+     * The request headers. FetchEventSource only supports the Record<string,string> format,
+     * or a function that returns the Record<string,string> format.
+     *
+     * Passing headers as a function allows you to set dynamic headers, useful in scenarios
+     * such as updating the Authorization header with a new bearer token.
      */
-    headers?: Record<string, string>,
+    headers?: Record<string, string> | (() => Record<string, string>),
 
     /**
      * Called when a response is received. Use this to validate that the response
@@ -64,13 +68,15 @@ export function fetchEventSource(input: RequestInfo, {
     fetch: inputFetch,
     ...rest
 }: FetchEventSourceInit) {
-    return new Promise<void>((resolve, reject) => {
+    let getHeaders: () => Record<string, string>;
+    if (typeof inputHeaders === 'function') {
+        getHeaders = inputHeaders;
+    } else {
         // make a copy of the input headers since we may modify it below:
-        const headers = { ...inputHeaders };
-        if (!headers.accept) {
-            headers.accept = EventStreamContentType;
-        }
+        getHeaders = () => ({ ...inputHeaders });
+    }
 
+    return new Promise<void>((resolve, reject) => {
         let curRequestController: AbortController;
         function onVisibilityChange() {
             curRequestController.abort(); // close existing request on every visibility change
@@ -100,6 +106,11 @@ export function fetchEventSource(input: RequestInfo, {
         const fetch = inputFetch ?? window.fetch;
         const onopen = inputOnOpen ?? defaultOnOpen;
         async function create() {
+            const headers = getHeaders();
+            if (!headers.accept) {
+                headers.accept = EventStreamContentType;
+            }
+
             curRequestController = new AbortController();
             try {
                 const response = await fetch(input, {
