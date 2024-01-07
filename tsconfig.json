@@ -1,7 +1,7 @@
 {
     "compilerOptions": {
-        "target": "ES2017",
-        "module": "commonjs",
+        "target": "ES2022",
+        "module": "ES2022",
         "esModuleInterop": true,
         "forceConsistentCasingInFileNames": true,
         "rootDir": "src",
@@ -16,7 +16,7 @@
         "noUnusedParameters": true,
         "lib": [
             "DOM",
-            "ES2018"
+            "ES2022"
         ]
     }
 }

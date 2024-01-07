@@ -21,7 +21,7 @@ export interface EventSourceMessage {
  */
 export async function getBytes(stream: ReadableStream<Uint8Array>, onChunk: (arr: Uint8Array) => void) {
     const reader = stream.getReader();
-    let result: ReadableStreamDefaultReadResult<Uint8Array>;
+    let result: ReadableStreamReadResult<Uint8Array>;
     while (!(result = await reader.read()).done) {
         onChunk(result.value);
     }
