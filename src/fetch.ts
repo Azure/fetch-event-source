@@ -87,7 +87,7 @@ export function fetchEventSource(input: RequestInfo, {
         let retryTimer = 0;
         function dispose() {
             document.removeEventListener('visibilitychange', onVisibilityChange);
-            window.clearTimeout(retryTimer);
+            self.clearTimeout(retryTimer);
             curRequestController.abort();
         }
 
@@ -97,7 +97,7 @@ export function fetchEventSource(input: RequestInfo, {
             resolve(); // don't waste time constructing/logging errors
         });
 
-        const fetch = inputFetch ?? window.fetch;
+        const fetch = inputFetch ?? self.fetch;
         const onopen = inputOnOpen ?? defaultOnOpen;
         async function create() {
             curRequestController = new AbortController();
@@ -131,8 +131,8 @@ export function fetchEventSource(input: RequestInfo, {
                     try {
                         // check if we need to retry:
                         const interval: any = onerror?.(err) ?? retryInterval;
-                        window.clearTimeout(retryTimer);
-                        retryTimer = window.setTimeout(create, interval);
+                        self.clearTimeout(retryTimer);
+                        retryTimer = self.setTimeout(create, interval);
                     } catch (innerErr) {
                         // we should not retry anymore:
                         dispose();
