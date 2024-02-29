@@ -72,8 +72,14 @@ export function fetchEventSource(input: RequestInfo, {
         }
 
         let curRequestController: AbortController;
+        function abortCurrentRequest() {
+          if (curRequestController) {
+            curRequestController.abort();
+          }
+        }
+
         function onVisibilityChange() {
-            curRequestController.abort(); // close existing request on every visibility change
+            abortCurrentRequest(); // close existing request on every visibility change
             if (!document.hidden) {
                 create(); // page is now visible again, recreate request.
             }
@@ -88,8 +94,9 @@ export function fetchEventSource(input: RequestInfo, {
         function dispose() {
             document.removeEventListener('visibilitychange', onVisibilityChange);
             window.clearTimeout(retryTimer);
-            curRequestController.abort();
+            abortCurrentRequest();
         }
+
 
         // if the incoming signal aborts, dispose resources and resolve:
         inputSignal?.addEventListener('abort', () => {
@@ -100,6 +107,8 @@ export function fetchEventSource(input: RequestInfo, {
         const fetch = inputFetch ?? window.fetch;
         const onopen = inputOnOpen ?? defaultOnOpen;
         async function create() {
+            // https://github.com/Azure/fetch-event-source/pull/7/files
+            abortCurrentRequest();
             curRequestController = new AbortController();
             try {
                 const response = await fetch(input, {
@@ -132,6 +141,7 @@ export function fetchEventSource(input: RequestInfo, {
                         // check if we need to retry:
                         const interval: any = onerror?.(err) ?? retryInterval;
                         window.clearTimeout(retryTimer);
+                        abortCurrentRequest();
                         retryTimer = window.setTimeout(create, interval);
                     } catch (innerErr) {
                         // we should not retry anymore:
