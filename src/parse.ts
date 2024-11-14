@@ -64,10 +64,10 @@ export function getLines(onLine: (line: Uint8Array, fieldLength: number) => void
                 if (buffer[position] === ControlChars.NewLine) {
                     lineStart = ++position; // skip to next char
                 }
-                
+
                 discardTrailingNewline = false;
             }
-            
+
             // start looking forward till the end of line:
             let lineEnd = -1; // index of the \r or \n char
             for (; position < bufLength && lineEnd === -1; ++position) {
@@ -142,8 +142,8 @@ export function getMessages(
                     // if this message already has data, append the new value to the old.
                     // otherwise, just set to the new value:
                     message.data = message.data
-                        ? message.data + '\n' + value
-                        : value; // otherwise, 
+                        ? message.data + (value || '\n')
+                        : value || '\n'; // otherwise,
                     break;
                 case 'event':
                     message.event = value;
