@@ -16,20 +16,20 @@ export interface FetchEventSourceInit extends RequestInit {
      * actually matches what you expect (and throw if it doesn't.) If not provided,
      * will default to a basic validation to ensure the content-type is text/event-stream.
      */
-    onopen?: (response: Response) => Promise<void>,
+    onopen?: (response: Response) => void | Promise<void>;
 
     /**
      * Called when a message is received. NOTE: Unlike the default browser
      * EventSource.onmessage, this callback is called for _all_ events,
      * even ones with a custom `event` field.
      */
-    onmessage?: (ev: EventSourceMessage) => void;
+    onmessage?: (ev: EventSourceMessage) => void | Promise<void>;
 
     /**
      * Called when a response finishes. If you don't expect the server to kill
      * the connection, you can throw an exception here and retry using onerror.
      */
-    onclose?: () => void;
+    onclose?: () => void | Promise<void>;
 
     /**
      * Called when there is any error making the request / processing messages /
