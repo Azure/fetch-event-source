@@ -100,7 +100,19 @@ export function fetchEventSource(input: RequestInfo, {
         const fetch = inputFetch ?? window.fetch;
         const onopen = inputOnOpen ?? defaultOnOpen;
         async function create() {
-            curRequestController = new AbortController();
+            // Store the AbortController instance in function scope to prevent race conditions
+            // This ensures that when error handling occurs, we check the abort status
+            // of the correct controller instance that was associated with this specific request,
+            // rather than potentially checking a new controller created by a subsequent request.
+            // 
+            // Race condition example:
+            // 1. Request A starts with Controller A
+            // 2. Tab becomes hidden -> Controller A is aborted
+            // 3. Tab becomes visible -> Request B starts with Controller B
+            // 4. Request A's error handler executes
+            // Without this fix, it would check Controller B's status instead of A's
+            const currentController = new AbortController();
+            curRequestController = currentController;
             try {
                 const response = await fetch(input, {
                     ...rest,
@@ -126,7 +138,7 @@ export function fetchEventSource(input: RequestInfo, {
                 dispose();
                 resolve();
             } catch (err) {
-                if (!curRequestController.signal.aborted) {
+                if (!currentController.signal.aborted) {
                     // if we haven't aborted the request ourselves:
                     try {
                         // check if we need to retry:
