@@ -349,5 +349,33 @@ describe('parse', () => {
             expect(idsIdx).toBe(2);
             expect(msgNum).toBe(1);
         });
+
+        it('should preserve newlines from empty data fields', () => {
+            // arrange:
+            let msgNum = 0;
+            const next = parse.getMessages(_id => {
+                fail('id should not be called');
+            }, _retry => {
+                fail('retry should not be called');
+            }, msg => {
+                ++msgNum;
+                expect(msg).toEqual({
+                    data: '\n\nfoo',
+                    id: '',
+                    event: 'message',
+                    retry: undefined,
+                });
+            });
+
+            // act:
+            next(encoder.encode('event: message'), 5);
+            next(encoder.encode('data:'), 4);
+            next(encoder.encode('data:'), 4);
+            next(encoder.encode('data: foo'), 4);
+            next(encoder.encode(''), -1);
+
+            // assert:
+            expect(msgNum).toBe(1);
+        });
     });
 });

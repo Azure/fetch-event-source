@@ -21,7 +21,7 @@ export interface EventSourceMessage {
  */
 export async function getBytes(stream: ReadableStream<Uint8Array>, onChunk: (arr: Uint8Array) => void) {
     const reader = stream.getReader();
-    let result: ReadableStreamDefaultReadResult<Uint8Array>;
+    let result: ReadableStreamReadResult<Uint8Array>;
     while (!(result = await reader.read()).done) {
         onChunk(result.value);
     }
@@ -127,6 +127,11 @@ export function getMessages(
     // return a function that can process each incoming line buffer:
     return function onLine(line: Uint8Array, fieldLength: number) {
         if (line.length === 0) {
+            // If the data buffer's last character is a U+000A LINE FEED (LF) character, then remove the last character from the data buffer.
+            if (message.data.endsWith('\n')) {
+                message.data = message.data.substring(0, message.data.length - 1);
+            }
+
             // empty line denotes end of message. Trigger the callback and start a new message:
             onMessage?.(message);
             message = newMessage();
@@ -139,11 +144,8 @@ export function getMessages(
 
             switch (field) {
                 case 'data':
-                    // if this message already has data, append the new value to the old.
-                    // otherwise, just set to the new value:
-                    message.data = message.data
-                        ? message.data + '\n' + value
-                        : value; // otherwise, 
+                    // Append the field value to the data buffer, then append a single U+000A LINE FEED (LF) character to the data buffer.
+                    message.data = message.data + value + '\n';
                     break;
                 case 'event':
                     message.event = value;
