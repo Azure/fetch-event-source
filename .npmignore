@@ -3,7 +3,6 @@
 coverage/
 lib/*.map
 lib/*.spec.*
-src/
 .nycrc
 jasmine.json
 tsconfig.json
