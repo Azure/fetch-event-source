@@ -64,6 +64,10 @@ export function fetchEventSource(input: RequestInfo, {
     fetch: inputFetch,
     ...rest
 }: FetchEventSourceInit) {
+    // Request leak if input signal aborted before the subscription even started.
+    if (inputSignal?.aborted) {
+        return;
+    }
     return new Promise<void>((resolve, reject) => {
         // make a copy of the input headers since we may modify it below:
         const headers = { ...inputHeaders };
